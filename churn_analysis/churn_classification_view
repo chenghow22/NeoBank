@@ -1,0 +1,48 @@
+WITH churn AS (
+SELECT user_id,
+MIN(created_date) as first_transaction_date, 
+MAX(created_date) as last_transaction_date,
+FROM `neobank-400108.raw_data.transactions` 
+WHERE transactions_state = "COMPLETED"
+GROUP BY (user_id)
+)
+,
+churn1 AS (
+SELECT 
+user_id,
+DATE(created_date) AS account_create_date,
+DATE(first_transaction_date) AS first_transaction_date,
+DATE(last_transaction_date) AS last_transaction_date,
+FROM `neobank-400108.raw_data.users` 
+join churn USING (user_id)
+)
+,
+churn2 AS (
+SELECT 
+user_id,
+churn1.account_create_date,
+churn1.first_transaction_date,
+churn1.last_transaction_date,
+DATE_DIFF (churn1.last_transaction_date, churn1.first_transaction_date,day) AS diff_last_and_first_transaction,
+DATE_DIFF('2019-05-16',churn1.last_transaction_date,day) AS diff_last_and_today
+from churn1
+)
+,
+churn3 AS (
+SELECT
+user_id,
+churn2.account_create_date,
+churn2.first_transaction_date,
+churn2.last_transaction_date,
+churn2.diff_last_and_first_transaction,
+churn2.diff_last_and_today,
+CASE 
+WHEN churn2.diff_last_and_today <= 30 THEN 'Active'
+WHEN churn2.diff_last_and_today > 30 AND churn2.diff_last_and_today <= 60 THEN 'Inactive'
+ELSE 'Churned'
+END AS classification
+FROM churn2 
+)
+SELECT *
+FROM churn3
+--WHERE Classification = "Churned"
