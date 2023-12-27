@@ -1,0 +1,34 @@
+WITH transac_user_device_merged AS (
+SELECT 
+t.*
+,u.birth_year
+,u.country
+,u.city
+,u.created_date AS user_created_date
+,u.user_settings_crypto_unlocked
+,u.plan
+,u.attributes_notifications_marketing_push
+,u.attributes_notifications_marketing_email
+,u.num_contacts
+,u.num_referrals
+,u.num_successful_referrals
+,d.string_field_0 AS device_type
+FROM `neobank-400108.raw_data.transactions` t
+LEFT JOIN neobank-400108.raw_data.users u
+ON t.user_id = u.user_id
+LEFT JOIN `raw_data.devices` d
+ON t.user_id = d.string_field_1
+)
+
+SELECT 
+  CONCAT(EXTRACT(YEAR FROM created_date), "-", LPAD(CAST(EXTRACT(MONTH FROM created_date) AS STRING), 2, "0")) AS txn_year_month,
+  *,
+  CONCAT(EXTRACT(YEAR FROM user_created_date), "-", LPAD(CAST(EXTRACT(MONTH FROM user_created_date) AS STRING), 2, "0")) AS birth_year_month,
+  CASE 
+    WHEN (2019 - birth_year) >= 55 THEN "55 and above (Babyboomers)"
+    WHEN (2019 - birth_year) >= 40 THEN "40 to 55 (GenX)"
+    WHEN (2019 - birth_year) >= 25 THEN "25 to 40 (Millennials)"
+    ELSE "18 to 25 (GenZ)"
+  END AS age_group
+FROM `neobank-400108.compiled_data.transac_user_device_merged`
+WHERE transactions_state = "COMPLETED"
