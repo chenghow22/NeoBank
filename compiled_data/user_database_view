@@ -1,0 +1,22 @@
+WITH user_db AS (
+SELECT  
+user_id,
+CONCAT(EXTRACT(YEAR FROM user_created_date), "-", LPAD(CAST(EXTRACT(MONTH FROM user_created_date) AS STRING), 2, "0")) AS account_year_month,
+birth_year,
+country,
+city,
+user_settings_crypto_unlocked,
+plan,
+CASE 
+  WHEN (2019 - birth_year) >= 55 THEN "55 and above (Babyboomers)"
+  WHEN (2019 - birth_year) >= 40 THEN "40 to 55 (GenX)"
+  WHEN (2019 - birth_year) >= 25 THEN "25 to 40 (Millennials)"
+  ELSE "18 to 25 (GenZ)"
+END AS age_group,
+device_type
+FROM `neobank-400108.compiled_data.transac_user_device_merged_view` 
+)
+
+SELECT
+DISTINCT *
+FROM user_db
