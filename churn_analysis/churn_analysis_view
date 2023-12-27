@@ -1,0 +1,38 @@
+WITH churn_by_month AS (
+SELECT 
+last_txn_month,
+country,
+age_group,
+device_type,
+COUNT(*) AS nb_of_churn
+FROM `neobank-400108.churn_rate.churn_analysis_view` 
+WHERE user_class = "churned_user"
+GROUP BY last_txn_month, country, age_group, device_type
+ORDER BY last_txn_month ASC
+)
+
+,  notif_group AS(
+   SELECT
+   notification_year_month, country, age_group, device,
+   ROUND(AVG(success_rate),2) AS success_rate
+   FROM neobank-400108.engagement_metrics.monthly_notif_sr_view
+   GROUP BY notification_year_month, country, age_group, device
+)
+
+
+SELECT
+t1.*,
+t2.nb_of_churn,
+ROUND(t2.nb_of_churn / t1.monthly_active_user * 100,2) AS churn_rate,
+t3.success_rate
+FROM neobank-400108.engagement_metrics.monthly_engagement t1
+INNER JOIN churn_by_month t2
+ON t1.txn_year_month = t2.last_txn_month 
+   AND t1.country = t2.country 
+   AND t1.age_group = t2.age_group
+   AND t1.device_type = t2.device_type
+INNER JOIN notif_group t3
+ON t1.txn_year_month = t3.notification_year_month
+   AND t1.country = t3.country 
+   AND t1.age_group = t3.age_group
+   AND t1.device_type = t3.device
