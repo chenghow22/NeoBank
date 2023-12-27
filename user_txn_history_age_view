@@ -1,0 +1,35 @@
+WITH txn_age AS(
+SELECT 
+user_id,
+Min(birth_year) as birth_year,
+-- MIN(created_date) AS first_txn_date,
+CONCAT(EXTRACT(YEAR FROM MIN(created_date)), "-", LPAD(CAST(EXTRACT(MONTH FROM MIN(created_date)) AS STRING), 2, "0")) AS first_txn_month,
+-- MAX(created_date) AS last_txn_date,
+CONCAT(EXTRACT(YEAR FROM MAX(created_date)), "-", LPAD(CAST(EXTRACT(MONTH FROM MAX(created_date)) AS STRING), 2, "0")) AS last_txn_month,
+ROUND(SUM(amount_usd),2) AS total_txn_amount,
+COUNT(transaction_id) AS total_txn_nb,
+COUNTIF (transactions_type = "CARD_PAYMENT") AS card_txn_nb,
+COUNTIF (transactions_type = "TRANSFER") AS transfer_txn_nb,
+COUNTIF (transactions_type = "TOPUP") AS topup_txn_nb,
+COUNTIF (transactions_type = "EXCHANGE") AS exchange_txn_nb,
+COUNTIF (transactions_type = "ATM") AS atm_txn_nb,
+DATE_DIFF(MAX(created_date), MIN(created_date), Day) AS user_life_day,
+DATE_DIFF(TIMESTAMP '2019-05-17', MAX(created_date), Day) AS day_to_last_txn,
+CASE WHEN DATE_DIFF(TIMESTAMP '2019-05-17', MAX(created_date), Day) > 60 THEN "churned_user"
+     WHEN DATE_DIFF(TIMESTAMP '2019-05-17', MAX(created_date), Day) >= 30 THEN "inactive_user"
+     ELSE "active_user"
+     END AS user_class
+FROM `neobank-400108.compiled_data.transac_user_device_merged_view` 
+WHERE transactions_state = "COMPLETED"
+GROUP BY user_id
+)
+
+SELECT 
+*,
+CASE 
+    WHEN (2019 - birth_year) >= 55 THEN "55 and above (Babyboomers)"
+    WHEN (2019 - birth_year) >= 40 THEN "40 to 55 (GenX)"
+    WHEN (2019 - birth_year) >= 25 THEN "25 to 40 (Millennials)"
+    ELSE "18 to 25 (GenZ)"
+END AS age_group,
+FROM txn_age
