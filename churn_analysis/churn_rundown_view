@@ -1,0 +1,26 @@
+WITH cte AS (
+  SELECT  
+    first_txn_month,
+    last_txn_month,
+    COUNT(user_id) AS nb_churn
+  FROM neobank-400108.churn_rate.churn_analysis_view
+  WHERE user_class = "churned_user"
+  GROUP BY first_txn_month, last_txn_month
+),
+
+cte2 AS (
+  SELECT
+    first_txn_month,
+    COUNT(user_id) AS nb_user
+  FROM neobank-400108.churn_rate.churn_analysis_view 
+  GROUP BY first_txn_month
+)
+
+SELECT
+  cte.*,
+  cte2.nb_user,
+  ROUND(cte.nb_churn / cte2.nb_user * 100, 2) AS churn_rate
+FROM cte
+INNER JOIN cte2
+ON cte.first_txn_month = cte2.first_txn_month
+ORDER BY first_txn_month ASC, last_txn_month ASC
