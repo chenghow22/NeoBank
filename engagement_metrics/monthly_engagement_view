@@ -1,0 +1,12 @@
+SELECT
+txn_year_month
+,country
+,age_group
+,device_type
+,COUNT(DISTINCT user_id) AS monthly_active_user
+,COUNT(DISTINCT transaction_id) AS total_txn_nb
+,ROUND(COUNT(DISTINCT transaction_id) / COUNT(DISTINCT user_id),2) AS txn_frequency
+,ROUND(AVG(amount_usd),2) AS average_txn_amount
+FROM neobank-400108.compiled_data.completed_txn_enriched_view
+GROUP BY txn_year_month, country, age_group, device_type
+ORDER BY txn_year_month ASC
