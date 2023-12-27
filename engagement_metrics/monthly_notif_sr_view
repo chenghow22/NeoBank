@@ -1,0 +1,10 @@
+SELECT  
+notification_year_month
+,reason
+,channel
+,country
+,age_group
+,device
+,ROUND(AVG(success) * 100,1) AS success_rate
+FROM neobank-400108.compiled_data.notification_enriched_view
+GROUP BY notification_year_month, reason, channel, country, age_group,device
