@@ -1,0 +1,11 @@
+SELECT
+t.*
+,CASE 
+  WHEN (2019 - u.birth_year) >= 55 THEN "55 and above (Babyboomers)"
+  WHEN (2019 - u.birth_year) >= 40 THEN "40 to 55 (GenX)"
+  WHEN (2019 - u.birth_year) >= 25 THEN "25 to 40 (Millennials)"
+  ELSE "18 to 25 (GenZ)"
+END AS age_group
+FROM `neobank-400108.raw_data.transactions` t
+LEFT JOIN neobank-400108.raw_data.users u
+ON t.user_id = u.user_id
