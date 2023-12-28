@@ -1,0 +1,19 @@
+WITH cte AS(
+SELECT
+user_id
+,AVG(amount_usd) AS mean_amount
+,NULLIF(STDDEV_POP(amount_usd),0) AS std_dev_amount
+FROM neobank-400108.fraudulent_txn.transaction_user_age_group
+GROUP BY user_id
+)
+
+SELECT
+t1.transaction_id,
+t1.user_id,
+ROUND(t1.amount_usd,2) AS amount_usd,
+ROUND((t1.amount_usd - cte.mean_amount) / cte.std_dev_amount, 2) AS z_score
+FROM neobank-400108.fraudulent_txn.transaction_user_age_group t1
+INNER JOIN cte ON t1.user_id = cte.user_id
+WHERE t1.transactions_state = 'COMPLETED' 
+AND ((t1.amount_usd - cte.mean_amount) / cte.std_dev_amount >= 3 OR (t1.amount_usd - cte.mean_amount) / cte.std_dev_amount <= -3)
+ORDER BY amount_usd DESC
