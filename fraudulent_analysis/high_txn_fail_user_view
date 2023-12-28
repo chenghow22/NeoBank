@@ -1,0 +1,27 @@
+WITH cte AS (
+SELECT  
+age_group,
+user_id,
+SUM(CASE WHEN transactions_state IN ('DECLINED', 'FAILED') THEN 1 ELSE 0 END) AS failed_txn
+FROM neobank-400108.fraudulent_txn.transaction_user_age_group
+GROUP BY age_group, user_id
+),
+
+cte2 AS(
+SELECT
+age_group
+,ROUND(AVG(failed_txn)) AS avg_failed_txn
+FROM cte
+GROUP BY age_group
+)
+
+SELECT
+cte.user_id
+,cte.age_group
+,cte.failed_txn
+,cte2.avg_failed_txn AS avg_failed_by_age_group
+FROM cte
+INNER JOIN cte2
+ON cte.age_group = cte2.age_group
+WHERE cte.failed_txn >= cte2.avg_failed_txn
+ORDER BY 3 DESC
