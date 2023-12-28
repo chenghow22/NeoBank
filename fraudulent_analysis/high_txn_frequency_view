@@ -1,0 +1,32 @@
+WITH cte1 AS(
+SELECT
+user_id
+,DATE(created_date) AS txn_date
+,COUNT(*) AS txn_number
+,SUM(amount_usd) AS total_daily_amount
+FROM neobank-400108.fraudulent_txn.transaction_user_age_group
+GROUP BY user_id, DATE(created_date)
+)
+, cte2 AS(
+SELECT
+user_id
+,ROUND(AVG(txn_number),2) AS mean_txn_nb
+,NULLIF(STDDEV_POP(txn_number),0) AS std_dev_txn_nb
+FROM cte1
+GROUP BY user_id
+)
+SELECT
+cte1.user_id
+,cte1.txn_date
+,cte2.mean_txn_nb
+,cte1.txn_number
+,ROUND((cte1.txn_number - cte2.mean_txn_nb) / cte2.std_dev_txn_nb,2) AS txn_nb_z_score
+,ROUND(cte1.total_daily_amount,2) AS total_daily_amount
+FROM cte1
+INNER JOIN cte2 ON cte1.user_id = cte2.user_id
+WHERE ABS((cte1.txn_number - cte2.mean_txn_nb) / cte2.std_dev_txn_nb) >= 3
+ORDER BY cte1.total_daily_amount DESC, cte1.txn_number DESC
+
+
+
+
