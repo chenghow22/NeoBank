@@ -1,0 +1,7 @@
+SELECT
+t1.*
+,IFNULL(t2.unsuccess_first_txn,0) AS unsuccess_first_txn
+,IFNULL(ROUND(t2.unsuccess_first_txn / t1.total_txn * 100),0) AS unsuccess_first_txn_rate
+FROM neobank-400108.fraudulent_txn.unsuccess_txn_rate t1
+LEFT JOIN neobank-400108.fraudulent_txn.unsuccess_first_txn t2
+ON t1.transactions_type = t2.transactions_type
