@@ -1,0 +1,23 @@
+WITH cte AS(
+SELECT
+ea_merchant_mcc
+,STDDEV_POP(amount_usd)*2 AS std_dev_x2_threshold
+FROM neobank-400108.fraudulent_txn.transaction_user_age_group
+WHERE ea_merchant_mcc IS NOT NULL
+GROUP BY ea_merchant_mcc
+)
+
+SELECT
+t1.transaction_id
+,t1.created_date AS transaction_date
+,t1.transactions_type
+,t1.amount_usd
+,cte.std_dev_x2_threshold
+,t1.transactions_state
+,t1.direction
+,t1.ea_merchant_mcc
+,t1.ea_cardholderpresence
+FROM neobank-400108.fraudulent_txn.transaction_user_age_group t1
+INNER JOIN cte ON t1.ea_merchant_mcc = cte.ea_merchant_mcc 
+WHERE t1.amount_usd >= cte.std_dev_x2_threshold
+ORDER BY amount_usd DESC, transaction_date DESC
